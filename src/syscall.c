@@ -2,7 +2,7 @@
 
 #define BUF_SIZE 256
 static void** syscall_tables = NULL;
-static struct syscall_hook** syscall_hooks = NULL;
+static struct syscall_hook* syscall_hooks = NULL;
 
 static char* syscall_get_kernel_version(char* buf, size_t length) {
     char *kernel_version = NULL;
@@ -33,6 +33,7 @@ static void** syscall_get_syscall_tables(char* kernel_version) {
     struct file *file = NULL;
     char *filename = NULL;
     void *table = NULL;
+    int ret;
 
     size_t filename_length = strlen(kernel_version)
                              + strlen(filename_prefix)
@@ -62,7 +63,7 @@ static void** syscall_get_syscall_tables(char* kernel_version) {
                 char *ptr = buf;
                 char *addr = strsep(&ptr, " ");
                 if (NULL != addr) {
-                    kstrtoul(addr, 16, (unsigned long*)&table);
+                    ret = kstrtoul(addr, 16, (unsigned long*)&table);
                 }
 
                 break;
@@ -122,7 +123,6 @@ int syscall_hook(struct syscall_hook hooks[]) {
         if (!entry->hooked) {
             entry->old_addr = (void *)syscall_tables[entry->nr];
             syscall_tables[entry->nr] = entry->new_addr;
-            syscall_log_debug("hook %s, old: %p, new: %p", entry->name, entry->old_addr, entry->new_addr);
             entry->hooked = true;
         }
     }
